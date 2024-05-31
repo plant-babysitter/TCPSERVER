@@ -1,0 +1,7 @@
+C:\Users\박성현\source\repos\TcpListenerTest\bin\Release\TcpListenerTest.exe.config
+C:\Users\박성현\source\repos\TcpListenerTest\bin\Release\TcpListenerTest.exe
+C:\Users\박성현\source\repos\TcpListenerTest\bin\Release\TcpListenerTest.pdb
+C:\Users\박성현\source\repos\TcpListenerTest\obj\Release\TcpListenerTest.csproj.AssemblyReference.cache
+C:\Users\박성현\source\repos\TcpListenerTest\obj\Release\TcpListenerTest.csproj.CoreCompileInputs.cache
+C:\Users\박성현\source\repos\TcpListenerTest\obj\Release\TcpListenerTest.exe
+C:\Users\박성현\source\repos\TcpListenerTest\obj\Release\TcpListenerTest.pdb
