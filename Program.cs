@@ -1,87 +1,75 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System;
 using System.Net;
-using System.Net.Sockets;
-using System.IO;
-using System.Diagnostics;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
 
-
-namespace TcpListenerTest
+namespace HttpListenerTest
 {
     internal class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
+            HttpListener listener = new HttpListener();
+            listener.Prefixes.Add("http://127.0.0.1:13000/");
+            listener.Start();
+            Console.WriteLine("HTTP Server started. Waiting for connections...");
 
-            TcpListener server = null;
-            IPAddress localAddr = IPAddress.Parse("127.0.0.1"); int port = 13000;
+            while (true)
+            {
+                HttpListenerContext context = await listener.GetContextAsync();
+                Task.Run(() => HandleRequest(context));
+            }
+        }
+
+        private static async Task HandleRequest(HttpListenerContext context)
+        {
+            HttpListenerRequest request = context.Request;
+            HttpListenerResponse response = context.Response;
+
             try
             {
-                server = new TcpListener(localAddr, port);
-                server.Start();
-
-                while (true)
+                using (var reader = new System.IO.StreamReader(request.InputStream, request.ContentEncoding))
                 {
-
-
-                    Console.WriteLine("waiting for a connection...");
-                    TcpClient client = server.AcceptTcpClient();
-                    Console.WriteLine("Connected!");
-                    
-                    NetworkStream stream = client.GetStream();
-                    byte[] readBuffer = new byte[1024];
-
-                    try
+                    string received = await reader.ReadToEndAsync();
+                    int jsonStartIndex = received.IndexOf("{");
+                    if (jsonStartIndex != -1)
                     {
-
-                        int bytesRead;
-                        //read bufferSize
-                        while ((bytesRead = stream.Read(readBuffer, 0, readBuffer.Length)) != 0)
+                        string jsonData = received.Substring(jsonStartIndex);
+                        try
                         {
-                            
+                            var json = JsonDocument.Parse(jsonData);
+                            Console.WriteLine($"Parsed JSON: {json.RootElement.ToString()}");
 
-                            string received = Encoding.UTF8.GetString(readBuffer, 0, bytesRead);
-                            Console.WriteLine("Received: {0}", received);
-
-                           
-
-
+                            // 응답 데이터 설정
+                            string responseString = "JSON received and parsed successfully.";
+                            byte[] buffer = Encoding.UTF8.GetBytes(responseString);
+                            response.ContentLength64 = buffer.Length;
+                            await response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
                         }
-
-
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine("Exception:{0}", ex.Message);
-                    }
-                    finally
-                    {
-                        stream.Close();
-                        client.Close();
-
-
+                        catch (JsonException ex)
+                        {
+                            Console.WriteLine($"JSON Parsing Error: {ex.Message}");
+                            response.StatusCode = (int)HttpStatusCode.BadRequest;
+                            byte[] buffer = Encoding.UTF8.GetBytes("Invalid JSON format.");
+                            response.ContentLength64 = buffer.Length;
+                            await response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
+                        }
                     }
                 }
             }
-            catch (SocketException e)
+            catch (Exception ex)
             {
-
-                Console.WriteLine("\r\n서버가 종료됩니다.");
-
-
+                Console.WriteLine($"Error occurred: {ex.Message}");
+                response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                byte[] buffer = Encoding.UTF8.GetBytes("Internal server error.");
+                response.ContentLength64 = buffer.Length;
+                await response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
             }
             finally
             {
-                server.Stop();
-                Console.WriteLine("Server stopped");
+                response.OutputStream.Close();
             }
         }
     }
 }
-    
-
-
-
