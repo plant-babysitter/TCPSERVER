@@ -97,7 +97,7 @@ namespace HttpListenerTest
             }
         }
 
-        private static async Task HandleRequest(HttpListenerContext context)
+        private static async Task newSocket(HttpListenerContext context)
         {
             HttpListenerRequest request = context.Request;
             HttpListenerResponse response = context.Response;
